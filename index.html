@@ -664,13 +664,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: userText, thread_id: threadId })
                 });
+                
+                // Safely handle Vercel server timeouts/errors
+                if (!response.ok) {
+                    typing.style.display = 'none';
+                    if (response.status === 504) {
+                        addMessage("System Alert: Vercel 10-second timeout exceeded.", 'ai');
+                    } else {
+                        addMessage(`System Alert: Server returned error status ${response.status}.`, 'ai');
+                    }
+                    return;
+                }
+
                 const data = await response.json();
                 
                 typing.style.display = 'none';
                 addMessage(data.response, 'ai');
             } catch (error) {
                 typing.style.display = 'none';
-                addMessage("System Alert: Communication with the legal engine failed.", 'ai');
+                addMessage(`System Alert: JS Parsing Error. Details: ${error.message}`, 'ai');
             }
         });
     </script>
