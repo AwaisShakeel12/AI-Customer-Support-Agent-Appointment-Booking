@@ -4,6 +4,12 @@ import logging
 from typing import Literal
 from dotenv import load_dotenv
 
+# ==========================================
+# 🚨 VERCEL FIX: Set cache directory to /tmp
+# This MUST be before importing composio!
+# ==========================================
+os.environ["COMPOSIO_CACHE_DIR"] = "/tmp/.composio"
+
 # Composio imports
 from composio import Composio
 from composio_langchain import LangchainProvider
