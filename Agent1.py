@@ -81,9 +81,11 @@ You are AS-AI, an AI assistant at a Legal & Financial Services for Law Firms & L
 model = ChatGoogleGenerativeAI(model="gemini-flash-lite-latest", api_key=api_key)
 model_with_tools = model.bind_tools(schedule_tools_set)
 
-def call_model(state: MessagesState):
+# Make call_model async and use ainvoke
+async def call_model(state: MessagesState):
     today_datetime = datetime.datetime.now().isoformat()
-    response = model_with_tools.invoke([SystemMessage(content=initial_message.format(today_datetime=today_datetime))] + state["messages"])
+    # Notice the 'await' and 'ainvoke' here!
+    response = await model_with_tools.ainvoke([SystemMessage(content=initial_message.format(today_datetime=today_datetime))] + state["messages"])
     return {"messages": [response]}
 
 async def tools_condition(state: MessagesState) -> Literal["find_slots", "create_onlin_meeting", "tools", "__end__"]:
@@ -99,6 +101,7 @@ async def tools_condition(state: MessagesState) -> Literal["find_slots", "create
         return "tools"
     return "__end__"
 
+# Fix find_slots async blocking
 async def find_slots(state: MessagesState):
     messages = state["messages"]
     last_message = messages[-1]
@@ -110,9 +113,11 @@ async def find_slots(state: MessagesState):
             args = call.get("args")
             find_free_slots_tool = next((tool for tool in schedule_tools_set if tool.name == tool_name), None)
             if tool_name == "GOOGLECALENDAR_FIND_FREE_SLOTS" and find_free_slots_tool:
-                res = find_free_slots_tool.invoke(args)
-                tool_messages.append(ToolMessage(name=tool_name, content=res, tool_call_id=tool_id))
+                # Use ainvoke!
+                res = await find_free_slots_tool.ainvoke(args)
+                tool_messages.append(ToolMessage(name=tool_name, content=str(res), tool_call_id=tool_id))
     return {"messages": tool_messages}
+
 
 async def create_onlin_meeting(state: MessagesState):
     messages = state["messages"]
@@ -125,8 +130,9 @@ async def create_onlin_meeting(state: MessagesState):
             args = call.get("args")
             create_meet_tool = next((tool for tool in schedule_tools_set if tool.name == tool_name), None)
             if tool_name == "GOOGLEMEET_CREATE_MEET" and create_meet_tool:
-                res = create_meet_tool.invoke(args)
-                tool_messages.append(ToolMessage(name=tool_name, content=res, tool_call_id=tool_id))
+                # Use ainvoke!
+                res = await create_meet_tool.ainvoke(args)
+                tool_messages.append(ToolMessage(name=tool_name, content=str(res), tool_call_id=tool_id))
     return {"messages": tool_messages}
 
 workflow = StateGraph(MessagesState)
