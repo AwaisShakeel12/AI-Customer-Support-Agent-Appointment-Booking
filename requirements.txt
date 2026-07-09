@@ -1,10 +1,7 @@
 fastapi
-uvicorn
-python-dotenv
-langgraph
-langchain
-langchain-core
+pydantic
 langchain-google-genai
+langgraph
 composio
 composio-langchain
-pydantic
+python-dotenv
